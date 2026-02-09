@@ -855,7 +855,7 @@
                     <div class="grid grid-2">
                         <div class="card">
                             <div class="card-title">Критический мониторинг</div>
-                            <div class="stat">12</div>
+                            <div class="stat" id="critical-count">0</div>
                             <div class="chip">Уровни 3-5 за 7 дней</div>
                         </div>
                         <div class="card">
@@ -1650,6 +1650,7 @@
                 empty.className = 'event-empty';
                 empty.textContent = 'Пока событий нет';
                 eventList.appendChild(empty);
+                updateCriticalCount();
                 return;
             }
             visible.forEach(event => {
@@ -1662,6 +1663,7 @@
                 `;
                 eventList.appendChild(item);
             });
+            updateCriticalCount();
         }
 
         function addEvent(message, tagLabel) {
@@ -1673,6 +1675,29 @@
             events = [entry, ...events];
             saveEvents();
             renderEvents();
+        }
+
+        function isCriticalEvent(entry) {
+            if (!entry) return false;
+            if (entry.tag !== 'Обход') return false;
+            const match = entry.message.match(/\(ур\.\s*(\d+)\)/i);
+            if (!match) return false;
+            const level = Number(match[1]);
+            return level >= 3;
+        }
+
+        function isWithinDays(timestamp, days) {
+            const date = new Date(timestamp);
+            if (Number.isNaN(date.getTime())) return false;
+            const diff = Date.now() - date.getTime();
+            return diff <= days * 24 * 60 * 60 * 1000;
+        }
+
+        function updateCriticalCount() {
+            const counter = document.getElementById('critical-count');
+            if (!counter) return;
+            const count = events.filter(entry => isWithinDays(entry.timestamp, 7) && isCriticalEvent(entry)).length;
+            counter.textContent = String(count);
         }
 
         function getWalkthroughEvent() {
