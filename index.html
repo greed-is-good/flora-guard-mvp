@@ -352,6 +352,21 @@
             color: #d6e6dd;
         }
 
+        .trend {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .trend.up {
+            color: var(--danger);
+        }
+
+        .trend.down {
+            color: var(--safe);
+        }
+
         .event-list {
             list-style: none;
             padding: 0;
@@ -857,6 +872,7 @@
                             <div class="card-title">Критический мониторинг</div>
                             <div class="stat" id="critical-count">0</div>
                             <div class="chip">Уровни 3-5 за 7 дней</div>
+                            <div class="trend" id="critical-trend">— за последние 24 часа</div>
                         </div>
                         <div class="card">
                             <div class="card-title">Лента событий</div>
@@ -1695,9 +1711,31 @@
 
         function updateCriticalCount() {
             const counter = document.getElementById('critical-count');
+            const trend = document.getElementById('critical-trend');
             if (!counter) return;
+            const now = Date.now();
             const count = events.filter(entry => isWithinDays(entry.timestamp, 7) && isCriticalEvent(entry)).length;
+            const last24 = events.filter(entry => isCriticalEvent(entry) && (now - new Date(entry.timestamp).getTime()) <= 24 * 60 * 60 * 1000).length;
+            const prev24 = events.filter(entry => {
+                if (!isCriticalEvent(entry)) return false;
+                const age = now - new Date(entry.timestamp).getTime();
+                return age > 24 * 60 * 60 * 1000 && age <= 48 * 60 * 60 * 1000;
+            }).length;
+            const delta = last24 - prev24;
             counter.textContent = String(count);
+
+            if (trend) {
+                trend.classList.remove('up', 'down');
+                if (delta > 0) {
+                    trend.textContent = `▲ +${delta} за последние 24 часа`;
+                    trend.classList.add('up');
+                } else if (delta < 0) {
+                    trend.textContent = `▼ ${delta} за последние 24 часа`;
+                    trend.classList.add('down');
+                } else {
+                    trend.textContent = '— за последние 24 часа';
+                }
+            }
         }
 
         function getWalkthroughEvent() {
