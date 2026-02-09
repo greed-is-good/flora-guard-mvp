@@ -1,0 +1,2411 @@
+﻿
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FloraGuard MVP — Demo UI</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --bg: #eef4f0;
+            --panel: #ffffff;
+            --ink: #1a2a22;
+            --muted: #5a6b62;
+            --line: rgba(20, 40, 30, 0.12);
+
+            --leaf: #1f7a45;
+            --leaf-2: #3fa766;
+            --leaf-3: #c9e8d5;
+
+            --danger: #c7322f;
+            --warn: #f0b429;
+            --safe: #2f9e44;
+            --info: #3567d6;
+
+            --shadow: 0 10px 24px rgba(16, 30, 22, 0.12);
+            --soft: 0 4px 14px rgba(16, 30, 22, 0.08);
+            --radius: 16px;
+            --toast-duration: 2200ms;
+            --row-highlight-duration: 2200ms;
+        }
+
+        body.dark {
+            --bg: #0f1412;
+            --panel: #161d19;
+            --ink: #e8efe9;
+            --muted: #a8b3ad;
+            --line: rgba(232, 239, 233, 0.12);
+            --leaf: #4fb874;
+            --leaf-2: #2f9e44;
+            --leaf-3: rgba(79, 184, 116, 0.2);
+            --danger: #ff6b6b;
+            --warn: #f8c24e;
+            --safe: #51cf66;
+            --info: #4dabf7;
+            --shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+            --soft: 0 4px 14px rgba(0, 0, 0, 0.25);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Onest", "Segoe UI", sans-serif;
+            color: var(--ink);
+            background: radial-gradient(1200px 600px at 10% -10%, #d6efe1 0%, transparent 60%),
+                        radial-gradient(800px 500px at 90% 0%, #e6f7ee 0%, transparent 50%),
+                        var(--bg);
+            min-height: 100vh;
+        }
+
+        body.dark {
+            background: radial-gradient(1200px 600px at 10% -10%, rgba(47, 158, 68, 0.2) 0%, transparent 60%),
+                        radial-gradient(800px 500px at 90% 0%, rgba(79, 184, 116, 0.15) 0%, transparent 50%),
+                        var(--bg);
+        }
+
+        .app {
+            display: grid;
+            grid-template-columns: 0 1fr;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body.sidebar-open .app {
+            grid-template-columns: minmax(240px, 20%) 1fr;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #f7fbf9 0%, #ffffff 65%);
+            border-right: 1px solid var(--line);
+            padding: 20px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            width: 280px;
+            transform: translateX(-110%);
+            transition: transform 0.25s ease;
+            z-index: 20;
+        }
+
+        body.sidebar-open .sidebar {
+            transform: translateX(0);
+        }
+
+        body.dark .sidebar {
+            background: linear-gradient(180deg, #121816 0%, #161d19 65%);
+        }
+
+        body:not(.sidebar-open) .sidebar {
+            pointer-events: none;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--leaf);
+        }
+
+        .brand-mark {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: conic-gradient(from 210deg, #4fb874, #2f9e44, #1f7a45);
+            display: grid;
+            place-items: center;
+            color: #ffffff;
+            font-size: 1.2rem;
+            box-shadow: var(--soft);
+        }
+
+        .nav {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            color: var(--ink);
+            font-weight: 600;
+            transition: 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background: var(--leaf-3);
+        }
+
+        .nav-item.active {
+            background: #e1f3ea;
+            color: var(--leaf);
+            box-shadow: inset 0 0 0 1px rgba(31, 122, 69, 0.2);
+        }
+
+        .nav-item small {
+            margin-left: auto;
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+        .sidebar-footer {
+            border-top: 1px solid var(--line);
+            padding-top: 16px;
+            font-size: 0.9rem;
+            color: var(--muted);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn {
+            border: none;
+            padding: 10px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            background: var(--leaf);
+            color: #fff;
+            transition: 0.2s ease;
+        }
+
+        .btn:hover { filter: brightness(0.95); }
+
+        .btn.is-disabled,
+        .btn[aria-disabled="true"] {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(0.2);
+        }
+
+        .btn-secondary {
+            background: #e7efe9;
+            color: var(--ink);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--line);
+            color: var(--ink);
+        }
+
+        body.dark .btn {
+            background: #2b7a4b;
+            color: #f4fbf7;
+        }
+
+        body.dark .btn-secondary {
+            background: #24312b;
+            color: var(--ink);
+        }
+
+        body.dark .btn-ghost {
+            background: transparent;
+            border: 1px solid rgba(232, 239, 233, 0.2);
+            color: var(--ink);
+        }
+
+        .content {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 28px;
+        }
+
+        .menu-toggle {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            border: none;
+            cursor: pointer;
+            background: #fff;
+            box-shadow: var(--soft);
+            font-size: 1.1rem;
+        }
+
+        body.dark .menu-toggle {
+            background: #1b2420;
+            color: var(--ink);
+        }
+
+        .page-title {
+            font-family: "Onest", sans-serif;
+            font-size: 1.6rem;
+            letter-spacing: 0.2px;
+        }
+
+        .topbar-right {
+            margin-left: auto;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .role-pill {
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: #fff;
+            box-shadow: var(--soft);
+            font-size: 0.85rem;
+        }
+
+        body.dark .role-pill {
+            background: #1b2420;
+            color: var(--ink);
+        }
+
+        main {
+            padding: 0 28px 40px;
+            display: grid;
+            gap: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .screen {
+            display: none;
+            background: var(--panel);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            animation: rise 0.3s ease;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: var(--soft);
+        }
+
+        body.dark .card {
+            background: var(--panel);
+        }
+
+        .card-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .stat {
+            font-size: 2.6rem;
+            font-weight: 800;
+            color: var(--danger);
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            background: #f1f6f3;
+            color: var(--muted);
+        }
+
+        body.dark .chip {
+            background: #223029;
+            color: #d6e6dd;
+        }
+
+        .event-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 8px;
+            font-size: 0.92rem;
+        }
+
+        .event {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: #f5faf7;
+        }
+
+        body.dark .event {
+            background: #1c2420;
+        }
+
+        .event-empty {
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: #f5faf7;
+            color: var(--muted);
+        }
+
+        body.dark .event-empty {
+            background: #1c2420;
+        }
+
+        .nav-tiles {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .nav-tile {
+            border-radius: 14px;
+            padding: 16px;
+            background: #f0f7f3;
+            border: 1px solid var(--line);
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        body.dark .nav-tile {
+            background: #1b241f;
+        }
+
+        .nav-tile:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            font-size: 0.95rem;
+            font-family: "Onest", sans-serif;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--leaf);
+            box-shadow: 0 0 0 3px rgba(31, 122, 69, 0.15);
+        }
+
+        body.dark input,
+        body.dark select,
+        body.dark textarea {
+            background: #121816;
+            color: var(--ink);
+            border-color: var(--line);
+        }
+
+        body.dark input::placeholder,
+        body.dark textarea::placeholder {
+            color: #7f8b84;
+        }
+
+        body.dark select option {
+            background: #161d19;
+            color: var(--ink);
+        }
+
+        .field-invalid {
+            border-color: var(--danger);
+            box-shadow: 0 0 0 3px rgba(199, 50, 47, 0.15);
+            background: #fff6f6;
+        }
+
+        body.dark .field-invalid {
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .field-hint {
+            margin-top: 4px;
+            font-size: 0.78rem;
+            color: var(--danger);
+            display: none;
+        }
+
+        .field-hint.visible {
+            display: block;
+        }
+
+        body.dark .field-hint {
+            color: #ffb4b4;
+        }
+
+        .step {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: #e6f2ea;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+        }
+
+        .color-cell {
+            border-radius: 12px;
+            padding: 12px;
+            color: #fff;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: 0.2s ease;
+            word-break: break-word;
+            line-height: 1.2;
+            min-height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .color-cell.active {
+            opacity: 1;
+            transform: translateY(-2px);
+            box-shadow: var(--soft);
+        }
+
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .level-btn {
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: 0.2s ease;
+        }
+
+        .level-btn.active {
+            opacity: 1;
+            transform: scale(1.03);
+            box-shadow: var(--soft);
+        }
+
+        .lvl-1 { background: #43a047; }
+        .lvl-2 { background: #f0b429; }
+        .lvl-3 { background: #f57c00; }
+        .lvl-4 { background: #c62828; }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 6px 0 10px;
+            color: var(--leaf);
+        }
+
+        .split {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 18px;
+        }
+
+        .walkthrough-layout {
+            display: grid;
+            gap: 18px;
+        }
+
+        .step-block {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 14px;
+            background: #f8fcf9;
+        }
+
+        body.dark .step-block {
+            background: #1b2320;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .table th, .table td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .table th { color: var(--muted); font-weight: 600; }
+
+        body.dark .table th,
+        body.dark .table td {
+            color: var(--ink);
+        }
+
+        body.dark .table thead th {
+            color: var(--muted);
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .row-highlight {
+            animation: rowFlash var(--row-highlight-duration) ease;
+        }
+
+        @keyframes rowFlash {
+            0% { background: rgba(79, 184, 116, 0.18); }
+            100% { background: transparent; }
+        }
+
+        .admin-users th:nth-child(2),
+        .admin-users td:nth-child(2) {
+            min-width: 180px;
+        }
+
+        .admin-users select {
+            min-width: 160px;
+        }
+
+        .admin-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .admin-actions .btn {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .admin-add {
+            display: grid;
+            grid-template-columns: minmax(200px, 1.6fr) minmax(160px, 1fr) minmax(180px, 1fr) auto;
+            gap: 12px;
+            align-items: end;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 900px) {
+            .admin-add {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .brand-credit {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .brand-credit strong {
+            color: var(--ink);
+        }
+
+        .report-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .report-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: #f8fcf9;
+        }
+
+        body.dark .report-item {
+            background: #1b2320;
+        }
+
+        .report-title {
+            font-weight: 600;
+        }
+
+        .color-field {
+            display: grid;
+            grid-template-columns: 44px 1fr;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .color-field input[type="color"] {
+            width: 44px;
+            height: 40px;
+            padding: 0;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .tag {
+            display: inline-flex;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .tag.admin { background: #f1edff; color: #4b3b7c; }
+        .tag.user { background: #ecf7f1; color: #1f7a45; }
+        .tag.block { background: #fee8e8; color: #b02a2a; }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1f2d23;
+            color: #fff;
+            padding: 14px 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-10px);
+            transition: 0.25s ease;
+            z-index: 2000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(140deg, #0f3b22, #1f7a45 65%, #3fa766);
+            display: grid;
+            place-items: center;
+            z-index: 3000;
+        }
+
+        .login-card {
+            background: #ffffff;
+            padding: 32px;
+            border-radius: 18px;
+            width: min(420px, 90vw);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+        }
+
+        .login-card h1 {
+            font-family: "Onest", sans-serif;
+            margin: 6px 0 6px;
+        }
+
+        .login-card p {
+            margin: 0 0 20px;
+            color: var(--muted);
+        }
+
+        .login-logo {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            background: conic-gradient(from 200deg, #4fb874, #2f9e44, #1f7a45);
+            font-size: 1.5rem;
+        }
+
+        .hidden { display: none; }
+
+        @media (max-width: 1100px) {
+            .app { grid-template-columns: 1fr; }
+            .sidebar { position: fixed; left: 0; top: 0; }
+            body.sidebar-open::after {
+                content: "";
+                position: fixed;
+                inset: 0;
+                background: rgba(12, 22, 16, 0.35);
+                z-index: 10;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .grid-2, .grid-3, .grid-4, .split {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .topbar { padding: 16px; }
+            main { padding: 0 16px 32px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-mark">🌿</div>
+                <div>
+                    FloraGuard
+                    <div style="font-size: 0.75rem; color: var(--muted); font-weight: 500;">MVP v1.0</div>
+                </div>
+            </div>
+
+            <ul class="nav">
+                <li class="nav-item active" data-target="dashboard">
+                    🏠 Главная
+                </li>
+                <li class="nav-item" data-target="walkthrough">
+                    🔍 Обход
+                </li>
+                <li class="nav-item" data-target="phenology">
+                    🌿 Фенология
+                </li>
+                <li class="nav-item" data-target="treatment">
+                    🧪 Журнал обработок
+                </li>
+                <li class="nav-item" data-target="climate">
+                    🌡️ Температурные режимы
+                </li>
+                <li class="nav-item admin-only" data-target="admin">
+                    📊 Панель администратора
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <div>Пользователь: Иванов И.И.</div>
+                <div class="chip">Роль: <span id="role-label">Агроном</span></div>
+                <button class="btn btn-secondary" id="role-toggle">Переключить на Админа</button>
+                <button class="btn btn-ghost" id="logout-btn">Выход</button>
+                <div class="brand-credit">Сделано в <strong>Routeam</strong></div>
+            </div>
+        </aside>
+
+        <div class="content">
+            <div class="topbar">
+                <button class="menu-toggle" id="menu-toggle">☰</button>
+                <div>
+                    <div class="page-title" id="page-title">Главный экран</div>
+                    <div style="color: var(--muted); font-size: 0.9rem;">Центр управления теплицами</div>
+                </div>
+                <div class="topbar-right">
+                    <button class="btn btn-ghost" id="theme-toggle">Темная тема</button>
+                    <div class="role-pill" id="date-pill">08.02.2026</div>
+                </div>
+            </div>
+
+            <main>
+                <section class="screen active" id="dashboard">
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <div class="card-title">Критический мониторинг</div>
+                            <div class="stat">12</div>
+                            <div class="chip">Уровни 3-5 за 7 дней</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Лента событий</div>
+                            <ul class="event-list" id="event-list"></ul>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="section-title">Быстрая навигация</div>
+                        <div class="nav-tiles">
+                            <div class="nav-tile" data-target="walkthrough">🔍 Начать обход</div>
+                            <div class="nav-tile" data-target="phenology">🌿 Внести замеры</div>
+                            <div class="nav-tile" data-target="treatment">🧪 Регистрация обработки</div>
+                            <div class="nav-tile" data-target="climate">🌡️ Температурные режимы</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="screen" id="walkthrough">
+                    <div class="walkthrough-layout">
+                        <div>
+                            <div class="section-title">Обход теплиц</div>
+                            <div class="form-grid step-block" style="margin-top: 16px;">
+                                <div>
+                                    <label>1. Теплица</label>
+                                    <select data-required="walkthrough">
+                                        <option value="" selected disabled>Выберите теплицу</option>
+                                        <option>Теплица №1</option>
+                                        <option>Теплица №2</option>
+                                        <option>Теплица №3</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>2. Ряд (1-264)</label>
+                                    <input type="number" placeholder="12" data-required="walkthrough" />
+                                </div>
+                                <div>
+                                    <label>3. Ячейка (1-15)</label>
+                                    <input type="number" placeholder="4" data-required="walkthrough" />
+                                </div>
+                            </div>
+
+                            <div class="step-block" style="margin-top: 16px;">
+                                <div class="step">4. Список проблем</div>
+                                <div class="color-grid" style="margin-top: 12px;">
+                                    <div class="color-cell active" style="background:#b02a2a;" data-color="Тута" data-color-key="tuta">Тута</div>
+                                    <div class="color-cell" style="background:#8e5a2a;" data-color="чучнистая роса" data-color-key="powdery">чучнистая роса</div>
+                                    <div class="color-cell" style="background:#ff7a3c;" data-color="тля" data-color-key="aphid">тля</div>
+                                    <div class="color-cell" style="background:#f0b429;" data-color="минер" data-color-key="miner">минер</div>
+                                    <div class="color-cell" style="background:#a65f2a;" data-color="ржавый клещ" data-color-key="rust-mite">ржавый клещ</div>
+                                    <div class="color-cell" style="background:#c05f7b;" data-color="паацтинный клец" data-color-key="spider-mite">паацтинный клец</div>
+                                    <div class="color-cell" style="background:#9e9e9e;" data-color="серая гниль" data-color-key="gray-rot">серая гниль</div>
+                                    <div class="color-cell" style="background:#4f6d7a;" data-color="совка" data-color-key="cutworm">совка</div>
+                                    <div class="color-cell" style="background:#3fa7d6;" data-color="белокрылка" data-color-key="whitefly">белокрылка</div>
+                                    <div class="color-cell" style="background:#6b6b6b;" data-color="вирусные растения" data-color-key="virus">вирусные растения</div>
+                                    <div class="color-cell" style="background:#c2413b;" data-color="вершинная гниль" data-color-key="blossom-rot">вершинная гниль</div>
+                                    <div class="color-cell" style="background:#7b4f2a;" data-color="бактериоз,фузариоз" data-color-key="bacteriosis">бактериоз,<br>фузариоз</div>
+                                </div>
+                            </div>
+
+                            <div class="step-block" style="margin-top: 16px;">
+                                <div class="step">5. Уровень угрозы</div>
+                                <div class="level-grid" style="margin-top: 12px;">
+                                    <button class="level-btn lvl-1 active">1</button>
+                                    <button class="level-btn lvl-2">2</button>
+                                    <button class="level-btn lvl-3">3</button>
+                                    <button class="level-btn lvl-4">4</button>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 18px; display: grid; gap: 10px;">
+                                <button class="btn" data-toast="Данные успешно записаны" data-validate="walkthrough" data-reset="walkthrough" data-event-type="walkthrough">Записать</button>
+                                <button class="btn btn-secondary" id="clear-walkthrough">Очистить поля</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="screen" id="phenology">
+                    <div class="section-title">Фенология</div>
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <div class="card-title">Шаг 1 — Координаты контрольной группы</div>
+                            <div class="form-grid">
+                                <div>
+                                    <label>Теплица</label>
+                                    <select data-required="phenology-step1,phenology-all">
+                                        <option value="" selected disabled>Выберите теплицу</option>
+                                        <option>Теплица №1</option>
+                                        <option>Теплица №2</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Ряд</label>
+                                    <input type="number" value="12" data-required="phenology-step1,phenology-all" />
+                                </div>
+                                <button class="btn btn-secondary" id="phenology-start" data-validate="phenology-step1">Перейти к анкете</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" id="phenology-form" style="margin-top: 16px; display: none;">
+                        <div class="card-title">Шаг 2 — Вегетация и рост</div>
+                        <div class="form-grid">
+                            <div>
+                                <label>Прирост за неделю (см)</label>
+                                <input type="number" data-required="phenology-step2,phenology-all" data-range-key="pheno_growth" />
+                            </div>
+                            <div>
+                                <label>Диаметр стебля (мм)</label>
+                                <input type="number" data-required="phenology-step2,phenology-all" data-range-key="pheno_stem" />
+                            </div>
+                            <div>
+                                <label>Длина 5-го листа (см)</label>
+                                <input type="number" data-required="phenology-step2,phenology-all" data-range-key="pheno_leaf5_length" />
+                            </div>
+                            <div>
+                                <label>Ширина 5-го листа (см)</label>
+                                <input type="number" data-required="phenology-step2,phenology-all" data-range-key="pheno_leaf_count" />
+                            </div>
+                            <div>
+                                <label>Количество листьев (шт)</label>
+                                <input type="number" data-required="phenology-step2,phenology-all" />
+                            </div>
+                            <div>
+                                <label>Густота стояния (головок/м²)</label>
+                                <input type="number" data-required="phenology-step2,phenology-all" />
+                            </div>
+                            <div>
+                                <label>Индекс лист. Повер (LAI) (м²/м²)</label>
+                                <input type="number" step="0.1" data-required="phenology-step2,phenology-all" />
+                            </div>
+                        </div>
+                        <div style="margin-top: 16px; display: flex; gap: 10px;">
+                            <button class="btn" id="phenology-next" data-validate="phenology-step2">Далее: Цветение</button>
+                        </div>
+                    </div>
+
+                    <div class="card" id="phenology-step3" style="margin-top: 16px; display: none;">
+                        <div class="card-title">Шаг 3 — Цветение и кисти</div>
+                        <div class="form-grid">
+                            <div>
+                                <label>Высота до макушки от цвет. кисти (см)</label>
+                                <input type="number" data-required="phenology-step3,phenology-all" />
+                            </div>
+                            <div>
+                                <label>Количество цветков (шт)</label>
+                                <input type="number" data-required="phenology-step3,phenology-all" />
+                            </div>
+                            <div>
+                                <label>Завязывающая кисть (шт)</label>
+                                <input type="number" data-required="phenology-step3,phenology-all" />
+                            </div>
+                            <div>
+                                <label>Опыление</label>
+                                <select data-required="phenology-step3,phenology-all">
+                                    <option value="" selected disabled>Выберите</option>
+                                    <option>Хорошее</option>
+                                    <option>Среднее</option>
+                                    <option>Плохое</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="margin-top: 16px; display: flex; gap: 10px;">
+                            <button class="btn btn-secondary" id="phenology-back">Назад</button>
+                            <button class="btn" id="phenology-next-2" data-validate="phenology-step3">Далее: Плоды</button>
+                        </div>
+                    </div>
+
+                    <div class="card" id="phenology-step4" style="margin-top: 16px; display: none;">
+                        <div class="card-title">Шаг 4 — Плоды и урожай</div>
+                        <div class="form-grid">
+                            <div>
+                                <label>Кол-во плодов на растении (шт)</label>
+                                <input type="number" data-required="phenology-step4,phenology-all" />
+                            </div>
+                            <div>
+                                <label>Собранная кисть (шт)</label>
+                                <input type="number" data-required="phenology-step4,phenology-all" />
+                            </div>
+                            <div>
+                                <label>Прирост плодов (плодов/м²)</label>
+                                <input type="number" data-required="phenology-step4,phenology-all" />
+                            </div>
+                            <div>
+                                <label>Сбор всего (плодов/м²)</label>
+                                <input type="number" data-required="phenology-step4,phenology-all" />
+                            </div>
+                            <div>
+                                <label>Плодовая нагрузка (плодов/м²)</label>
+                                <input type="number" data-required="phenology-step4,phenology-all" />
+                            </div>
+                            <div>
+                                <label>Период созревания (дней)</label>
+                                <input type="number" data-required="phenology-step4,phenology-all" />
+                            </div>
+                            <div>
+                                <label>Урожайность (реальный) (кг/м²)</label>
+                                <input type="number" step="0.1" data-required="phenology-step4,phenology-all" />
+                            </div>
+                            <div>
+                                <label>Сред. вес плода (грамм)</label>
+                                <input type="number" data-required="phenology-step4,phenology-all" />
+                            </div>
+                            <div>
+                                <label>Отход, выброс (%)</label>
+                                <input type="number" data-required="phenology-step4,phenology-all" />
+                            </div>
+                        </div>
+                        <div style="margin-top: 16px; display: flex; gap: 10px;">
+                            <button class="btn btn-secondary" id="phenology-back-2">Назад</button>
+                            <button class="btn" data-toast="Данные сохранены" data-validate="phenology-all" data-reset="phenology" data-event-type="phenology">Сохранить анкету</button>
+                        </div>
+                    </div>
+                </section>
+                <section class="screen" id="treatment">
+                    <div class="section-title">Журнал обработок</div>
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <div class="card-title">Фиксация обработки</div>
+                            <div class="form-grid">
+                                <div>
+                                    <label>Тип обработки</label>
+                                    <select data-required="treatment" id="treatment-type">
+                                        <option value="" selected disabled>Выберите тип</option>
+                                        <option value="insecticide">Инсектицид</option>
+                                        <option value="fungicide">Фунгицид</option>
+                                        <option value="stimulant">Стимулятор</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Препарат</label>
+                                    <select data-required="treatment" id="treatment-drug">
+                                        <option value="" selected disabled>Выберите препарат</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Зона (ряды)</label>
+                                    <input type="text" placeholder="1-10 или 5, 12" data-required="treatment" />
+                                </div>
+                                <div>
+                                    <label>Комментарий</label>
+                                    <textarea rows="3" placeholder="Особые условия обработки" data-required="treatment"></textarea>
+                                </div>
+                                <button class="btn" data-toast="Запись добавлена" data-validate="treatment" id="treatment-save">Зарегистрировать</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Последние операции</div>
+                            <div class="table-responsive">
+                                <table class="table" id="treatment-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Дата</th>
+                                            <th>Препарат</th>
+                                            <th>Зона</th>
+                                            <th>Комментарий</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="treatment-history">
+                                        <tr>
+                                            <td>08.02.2026 09:10</td>
+                                            <td>Актара (Тля)</td>
+                                            <td>Теплица 1, ряды 1-10</td>
+                                            <td>Плановая обработка</td>
+                                        </tr>
+                                        <tr>
+                                            <td>07.02.2026 15:20</td>
+                                            <td>Матч (Личинки)</td>
+                                            <td>Теплица 2, ряды 5-12</td>
+                                            <td>Повышенный риск</td>
+                                        </tr>
+                                        <tr>
+                                            <td>06.02.2026 11:45</td>
+                                            <td>Свитч (Гниль)</td>
+                                            <td>Теплица 3, ряд 8</td>
+                                            <td>Очаги заболевания</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="screen" id="climate">
+                    <div class="section-title">Температурные режимы</div>
+                    <div class="card" style="margin-bottom: 16px;">
+                        <div class="card-title">Координаты</div>
+                        <div class="form-grid">
+                            <div>
+                                <label>Теплица</label>
+                                <select data-required="climate" id="climate-greenhouse">
+                                    <option value="" selected disabled>Выберите теплицу</option>
+                                    <option>Теплица №1</option>
+                                    <option>Теплица №2</option>
+                                    <option>Теплица №3</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Ряд</label>
+                                <input type="number" data-required="climate" id="climate-row" />
+                            </div>
+                            <div>
+                                <label>Ячейка</label>
+                                <input type="number" data-required="climate" id="climate-cell" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <div class="card-title">Микроклимат и освещенность</div>
+                            <div class="form-grid">
+                                <div>
+                                    <label>Солнечная радиация (J/cm²/d)</label>
+                                <input type="number" data-required="climate" data-range-key="climate_indoor_avg" />
+                                </div>
+                                <div>
+                                    <label>Лампы (часы)</label>
+                                <input type="number" data-required="climate" data-range-key="climate_temp_diff" />
+                                </div>
+                                <div>
+                                    <label>Общая освещенность (J/cm²/d)</label>
+                                <input type="number" data-required="climate" data-range-key="climate_humidity_avg" />
+                                </div>
+                                <div>
+                                    <label>Дневное время (часы)</label>
+                                <input type="number" data-required="climate" data-range-key="climate_humidity_day" />
+                                </div>
+                                <div>
+                                    <label>Средняя наружная темп. (°C)</label>
+                                <input type="number" data-required="climate" data-range-key="climate_humidity_night" />
+                                </div>
+                                <div>
+                                    <label>Среднесуточная внутри (°C)</label>
+                                <input type="number" data-required="climate" data-range-key="climate_co2_avg" />
+                                </div>
+                                <div>
+                                    <label>Среднедневная темп. (°C)</label>
+                                <input type="number" data-required="climate" data-range-key="irrigation_drainage" />
+                                </div>
+                                <div>
+                                    <label>Средненочная темп. (°C)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Разница температур (DIF) (°C)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Рельсовые трубы (день) (°C)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Рельсовые трубы (ночь) (°C)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Труба роста (день) (°C)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Труба роста (ночь) (°C)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Влажность средняя (%)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Влажность день (%)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Влажность ночь (%)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>СО2 среднее (ppm)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Полив и субстрат</div>
+                            <div class="form-grid">
+                                <div>
+                                    <label>Начало полива</label>
+                                    <input type="time" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Окончание полива</label>
+                                    <input type="time" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Количество поливов (nr)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Объем подачи (l/m²)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Полученный дренаж (l/m²)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Дренаж (%)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Потребленный объем (l/m²)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Полив/освещенность (ml/Joules)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Капельница EC (mS/cm)</label>
+                                <input type="number" step="0.1" data-required="climate" data-range-key="substrate_ph" />
+                                </div>
+                                <div>
+                                    <label>Капельница pH</label>
+                                    <input type="number" step="0.1" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Субстрат EC (mS/cm)</label>
+                                    <input type="number" step="0.1" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Субстрат pH</label>
+                                    <input type="number" step="0.1" data-required="climate" />
+                                </div>
+                                <div>
+                                    <label>Влагосодержание субстрата (%)</label>
+                                    <input type="number" data-required="climate" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn" style="margin-top: 18px;" data-toast="Данные по климату сохранены" data-validate="climate" data-reset="climate" data-event-type="climate">Записать</button>
+                </section>
+
+                <section class="screen" id="admin">
+                    <div class="section-title">Панель администратора</div>
+                    <div class="grid grid-2">
+                        <div class="card" style="grid-column: 1 / -1;">
+                            <div class="card-title">Пользователи</div>
+                            <div class="admin-add">
+                                <div>
+                                    <label>Имя сотрудника</label>
+                                    <input type="text" id="admin-user-name" placeholder="Иванов И.И." />
+                                </div>
+                                <div>
+                                    <label>Роль</label>
+                                    <select id="admin-user-role">
+                                        <option value="" selected disabled>Выберите роль</option>
+                                        <option value="Агроном">Агроном</option>
+                                        <option value="Администратор">Администратор</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Временный пароль</label>
+                                    <input type="text" id="admin-user-password" placeholder="••••••" />
+                                </div>
+                                <button class="btn btn-secondary" id="admin-add-user">Добавить</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table admin-users">
+                                    <thead>
+                                        <tr>
+                                            <th>Имя</th>
+                                            <th>Роль</th>
+                                            <th>Статус</th>
+                                            <th>Действия</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="user-row" data-user="Иванов И.И." data-status="active">
+                                            <td class="user-name">Иванов И.И.</td>
+                                            <td>
+                                                <select class="user-role">
+                                                    <option>Агроном</option>
+                                                    <option>Администратор</option>
+                                                </select>
+                                            </td>
+                                            <td><span class="tag user-status">Активен</span></td>
+                                            <td>
+                                                <div class="admin-actions">
+                                                    <button class="btn btn-secondary" data-action="password">Сменить пароль</button>
+                                                    <button class="btn btn-ghost" data-action="toggle-block">Заблокировать</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr class="user-row" data-user="Петрова Н.А." data-status="active">
+                                            <td class="user-name">Петрова Н.А.</td>
+                                            <td>
+                                                <select class="user-role">
+                                                    <option>Администратор</option>
+                                                    <option>Агроном</option>
+                                                </select>
+                                            </td>
+                                            <td><span class="tag user-status">Активен</span></td>
+                                            <td>
+                                                <div class="admin-actions">
+                                                    <button class="btn btn-secondary" data-action="password">Сменить пароль</button>
+                                                    <button class="btn btn-ghost" data-action="toggle-block">Заблокировать</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr class="user-row" data-user="Сидоров А.В." data-status="blocked">
+                                            <td class="user-name">Сидоров А.В.</td>
+                                            <td>
+                                                <select class="user-role">
+                                                    <option>Агроном</option>
+                                                    <option>Администратор</option>
+                                                </select>
+                                            </td>
+                                            <td><span class="tag block user-status">Заблокирован</span></td>
+                                            <td>
+                                                <div class="admin-actions">
+                                                    <button class="btn btn-secondary" data-action="password">Сменить пароль</button>
+                                                    <button class="btn btn-ghost" data-action="toggle-block">Разблокировать</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Отчеты</div>
+                            <div class="report-grid">
+                                <div class="report-item">
+                                    <div class="report-title">Тепловая карта</div>
+                                    <button class="btn btn-secondary" data-toast="Экспорт: Тепловая карта (.xlsx)">Скачать отчет</button>
+                                </div>
+                                <div class="report-item">
+                                    <div class="report-title">Журнал климата</div>
+                                    <button class="btn btn-secondary" data-toast="Экспорт: Журнал климата (.xlsx)">Скачать отчет</button>
+                                </div>
+                                <div class="report-item">
+                                    <div class="report-title">Фенология</div>
+                                    <button class="btn btn-secondary" data-toast="Экспорт: Фенология (.xlsx)">Скачать отчет</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="margin-top: 16px;">
+                        <div class="card-title">Справочники (Настройки)</div>
+                        <div class="grid grid-2">
+                            <div>
+                                <div class="section-title">Вредители и цвета</div>
+                                <div class="form-grid">
+                                    <div>
+                                        <label>Тута</label>
+                                        <div class="color-field">
+                                            <input type="color" value="#b02a2a" data-color-sync="tuta" />
+                                            <input type="text" value="#b02a2a" data-color-sync="tuta" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label>Чучнистая роса</label>
+                                        <div class="color-field">
+                                            <input type="color" value="#8e5a2a" data-color-sync="powdery" />
+                                            <input type="text" value="#8e5a2a" data-color-sync="powdery" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label>Тля</label>
+                                        <div class="color-field">
+                                            <input type="color" value="#ff7a3c" data-color-sync="aphid" />
+                                            <input type="text" value="#ff7a3c" data-color-sync="aphid" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label>Белокрылка</label>
+                                        <div class="color-field">
+                                            <input type="color" value="#3fa7d6" data-color-sync="whitefly" />
+                                            <input type="text" value="#3fa7d6" data-color-sync="whitefly" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label>Серая гниль</label>
+                                        <div class="color-field">
+                                            <input type="color" value="#9e9e9e" data-color-sync="gray-rot" />
+                                            <input type="text" value="#9e9e9e" data-color-sync="gray-rot" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label>Минер</label>
+                                        <div class="color-field">
+                                            <input type="color" value="#f0b429" data-color-sync="miner" />
+                                            <input type="text" value="#f0b429" data-color-sync="miner" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label>Ржавый клещ</label>
+                                        <div class="color-field">
+                                            <input type="color" value="#a65f2a" data-color-sync="rust-mite" />
+                                            <input type="text" value="#a65f2a" data-color-sync="rust-mite" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label>Паацтинный клец</label>
+                                        <div class="color-field">
+                                            <input type="color" value="#c05f7b" data-color-sync="spider-mite" />
+                                            <input type="text" value="#c05f7b" data-color-sync="spider-mite" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label>Совка</label>
+                                        <div class="color-field">
+                                            <input type="color" value="#4f6d7a" data-color-sync="cutworm" />
+                                            <input type="text" value="#4f6d7a" data-color-sync="cutworm" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label>Вирусные растения</label>
+                                        <div class="color-field">
+                                            <input type="color" value="#6b6b6b" data-color-sync="virus" />
+                                            <input type="text" value="#6b6b6b" data-color-sync="virus" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label>Вершинная гниль</label>
+                                        <div class="color-field">
+                                            <input type="color" value="#c2413b" data-color-sync="blossom-rot" />
+                                            <input type="text" value="#c2413b" data-color-sync="blossom-rot" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label>Бактериоз, фузариоз</label>
+                                        <div class="color-field">
+                                            <input type="color" value="#7b4f2a" data-color-sync="bacteriosis" />
+                                            <input type="text" value="#7b4f2a" data-color-sync="bacteriosis" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="section-title">Нормативы (Min/Max)</div>
+                                <div class="form-grid">
+                                    <div>
+                                        <label>Фенология — Прирост за неделю (см)</label>
+                                        <input type="text" value="0 — 15" data-range-setting="pheno_growth" />
+                                    </div>
+                                    <div>
+                                        <label>Фенология — Диаметр стебля (мм)</label>
+                                        <input type="text" value="2 — 12" data-range-setting="pheno_stem" />
+                                    </div>
+                                    <div>
+                                        <label>Фенология — Длина 5-го листа (см)</label>
+                                        <input type="text" value="8 — 28" data-range-setting="pheno_leaf5_length" />
+                                    </div>
+                                    <div>
+                                        <label>Фенология — Кол-во листьев (шт)</label>
+                                        <input type="text" value="10 — 28" data-range-setting="pheno_leaf_count" />
+                                    </div>
+                                    <div>
+                                        <label>Климат — Среднесуточная внутри (°C)</label>
+                                        <input type="text" value="14 — 32" data-range-setting="climate_indoor_avg" />
+                                    </div>
+                                    <div>
+                                        <label>Климат — Влажность средняя (%)</label>
+                                        <input type="text" value="50 — 95" data-range-setting="climate_humidity_avg" />
+                                    </div>
+                                    <div>
+                                        <label>Климат — СО2 среднее (ppm)</label>
+                                        <input type="text" value="400 — 1200" data-range-setting="climate_co2_avg" />
+                                    </div>
+                                    <div>
+                                        <label>Климат — Разница температур (DIF) (°C)</label>
+                                        <input type="text" value="0 — 8" data-range-setting="climate_temp_diff" />
+                                    </div>
+                                    <div>
+                                        <label>Полив — Дренаж (%)</label>
+                                        <input type="text" value="5 — 35" data-range-setting="irrigation_drainage" />
+                                    </div>
+                                    <div>
+                                        <label>Полив — Субстрат pH</label>
+                                        <input type="text" value="5.2 — 6.5" data-range-setting="substrate_ph" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 12px;">
+                            <button class="btn btn-secondary" data-toast="Настройки сохранены">Сохранить настройки</button>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div class="login-overlay" id="login-overlay">
+        <div class="login-card">
+            <div class="login-logo">🌿</div>
+            <h1>FloraGuard</h1>
+            <p>Цифровой мониторинг теплиц и вегетации</p>
+            <div class="form-grid">
+                <div>
+                    <label>Логин</label>
+                    <input type="text" value="agronom01" />
+                </div>
+                <div>
+                    <label>Пароль</label>
+                    <input type="password" value="password" />
+                </div>
+                <button class="btn" id="login-btn">Войти</button>
+            </div>
+            <div class="brand-credit">Made by <strong>Routeam</strong></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Данные сохранены</div>
+    <script>
+        const navItems = document.querySelectorAll('.nav-item');
+        const screens = document.querySelectorAll('.screen');
+        const title = document.getElementById('page-title');
+        const menuToggle = document.getElementById('menu-toggle');
+        const roleToggle = document.getElementById('role-toggle');
+        const roleLabel = document.getElementById('role-label');
+        const toast = document.getElementById('toast');
+        const adminItems = document.querySelectorAll('.admin-only');
+        const loginOverlay = document.getElementById('login-overlay');
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const themeToggle = document.getElementById('theme-toggle');
+        const TOAST_DURATION_MS = Number(
+            getComputedStyle(document.documentElement)
+                .getPropertyValue('--toast-duration')
+                .replace('ms', '')
+                .trim()
+        ) || 2200;
+        let toastTimer = null;
+
+        function showToast(message) {
+            if (!toast) return;
+            toast.textContent = message;
+            toast.classList.add('show');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), TOAST_DURATION_MS);
+        }
+
+        const eventList = document.getElementById('event-list');
+        const EVENT_STORAGE_KEY = 'floraguard-event-log';
+        const MAX_EVENTS = 5;
+        let events = [];
+
+        function loadEvents() {
+            try {
+                const raw = localStorage.getItem(EVENT_STORAGE_KEY);
+                events = raw ? JSON.parse(raw) : [];
+            } catch (error) {
+                events = [];
+            }
+        }
+
+        function saveEvents() {
+            try {
+                localStorage.setItem(EVENT_STORAGE_KEY, JSON.stringify(events));
+            } catch (error) {
+                // ignore storage errors in demo mode
+            }
+        }
+
+        function formatEventLabel(timestamp) {
+            const date = new Date(timestamp);
+            if (Number.isNaN(date.getTime())) return '';
+            const now = new Date();
+            const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const startOfYesterday = new Date(startOfToday);
+            startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+            const timeLabel = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            if (date >= startOfToday) return `Сегодня ${timeLabel}`;
+            if (date >= startOfYesterday) return `Вчера ${timeLabel}`;
+            return `${date.toLocaleDateString('ru-RU')} ${timeLabel}`;
+        }
+
+        function renderEvents() {
+            if (!eventList) return;
+            eventList.innerHTML = '';
+            const visible = events.slice(0, MAX_EVENTS);
+            if (!visible.length) {
+                const empty = document.createElement('li');
+                empty.className = 'event-empty';
+                empty.textContent = 'Пока событий нет';
+                eventList.appendChild(empty);
+                return;
+            }
+            visible.forEach(event => {
+                const item = document.createElement('li');
+                item.className = 'event';
+                const timeLabel = formatEventLabel(event.timestamp);
+                item.innerHTML = `
+                    <span>${timeLabel} — ${event.message}</span>
+                    ${event.tag ? `<span class=\"chip\">${event.tag}</span>` : ''}
+                `;
+                eventList.appendChild(item);
+            });
+        }
+
+        function addEvent(message, tagLabel) {
+            const entry = {
+                timestamp: new Date().toISOString(),
+                message,
+                tag: tagLabel || ''
+            };
+            events = [entry, ...events];
+            saveEvents();
+            renderEvents();
+        }
+
+        function getWalkthroughEvent() {
+            const section = document.getElementById('walkthrough');
+            if (!section) return null;
+            const greenhouse = section.querySelector('select')?.value || 'Теплица';
+            const fields = section.querySelectorAll('input[data-required="walkthrough"]');
+            const row = fields[0]?.value || '';
+            const cell = fields[1]?.value || '';
+            const problem = section.querySelector('.color-cell.active')?.textContent.replace(/\s+/g, ' ').trim() || 'Проблема';
+            const level = section.querySelector('.level-btn.active')?.textContent.trim() || '';
+            return `${greenhouse}: ряд ${row}, ячейка ${cell} — ${problem}${level ? ` (ур. ${level})` : ''}`;
+        }
+
+        function getPhenologyEvent() {
+            const section = document.getElementById('phenology');
+            if (!section) return null;
+            const greenhouse = section.querySelector('select[data-required*="phenology-step1"]')?.value || 'Теплица';
+            const row = section.querySelector('input[data-required*="phenology-step1"]')?.value || '';
+            return `Фенология: ${greenhouse}, ряд ${row} — анкета сохранена`;
+        }
+
+        function getClimateEvent() {
+            const greenhouse = document.getElementById('climate-greenhouse')?.value || 'Теплица';
+            const row = document.getElementById('climate-row')?.value || '';
+            const cell = document.getElementById('climate-cell')?.value || '';
+            const coords = row && cell ? `ряд ${row}, ячейка ${cell}` : row ? `ряд ${row}` : '';
+            return `Климат: ${greenhouse}${coords ? ` — ${coords}` : ''} — параметры сохранены`;
+        }
+
+        const pageTitles = {
+            dashboard: 'Дашборд',
+            walkthrough: 'Обход',
+            phenology: 'Фенология',
+            treatment: 'Журнал обработок',
+            climate: 'Температурные режимы',
+            admin: 'Панель администратора'
+        };
+
+        function showScreen(id) {
+            screens.forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(id);
+            if (target) target.classList.add('active');
+            navItems.forEach(n => n.classList.toggle('active', n.dataset.target === id));
+            title.textContent = pageTitles[id] || 'FloraGuard';
+        }
+
+        function closeSidebar() {
+            document.body.classList.remove('sidebar-open');
+        }
+
+        const attemptedGroups = new Set();
+
+        function parseGroups(value) {
+            if (!value) return [];
+            return value.split(',').map(item => item.trim()).filter(Boolean);
+        }
+
+        const rangeSettings = new Map();
+        const fieldHintMap = new WeakMap();
+
+        function parseRange(value) {
+            if (!value) return null;
+            const normalized = value.replace(',', '.');
+            const numbers = normalized.match(/-?\d+(?:\.\d+)?/g);
+            if (!numbers || numbers.length < 2) return null;
+            const min = Number(numbers[0]);
+            const max = Number(numbers[1]);
+            if (Number.isNaN(min) || Number.isNaN(max)) return null;
+            return { min, max };
+        }
+
+        function updateRangeSettings() {
+            rangeSettings.clear();
+            document.querySelectorAll('[data-range-setting]').forEach(input => {
+                const key = input.dataset.rangeSetting;
+                const range = parseRange(input.value);
+                if (key && range) rangeSettings.set(key, range);
+            });
+        }
+
+        function isFilled(field) {
+            if (!field) return false;
+            const tag = field.tagName.toLowerCase();
+            if (tag === 'select') return field.value.trim() !== '';
+            return field.value.trim() !== '';
+        }
+
+        function isRangeValid(field) {
+            if (!field) return true;
+            const key = field.dataset.rangeKey;
+            if (!key) return true;
+            const range = rangeSettings.get(key);
+            if (!range) return true;
+            const raw = field.value.trim();
+            if (!raw) return true;
+            const value = Number(raw.replace(',', '.'));
+            if (Number.isNaN(value)) return false;
+            return value >= range.min && value <= range.max;
+        }
+
+        function getRangeHint(field) {
+            const key = field.dataset.rangeKey;
+            if (!key) return '';
+            const range = rangeSettings.get(key);
+            if (!range) return '';
+            return `Допустимо: ${range.min} — ${range.max}`;
+        }
+
+        function getFieldHintElement(field) {
+            if (fieldHintMap.has(field)) return fieldHintMap.get(field);
+            const hint = document.createElement('div');
+            hint.className = 'field-hint';
+            const parent = field.parentElement || field;
+            parent.appendChild(hint);
+            fieldHintMap.set(field, hint);
+            return hint;
+        }
+
+        function getRequiredFields(groupId) {
+            const fields = document.querySelectorAll('[data-required]');
+            return Array.from(fields).filter(field => {
+                const groups = parseGroups(field.getAttribute('data-required'));
+                return groups.includes(groupId);
+            });
+        }
+
+        function isGroupValid(groupId) {
+            const required = getRequiredFields(groupId);
+            for (const field of required) {
+                if (!isFilled(field)) return false;
+                if (!isRangeValid(field)) return false;
+            }
+
+            if (groupId === 'walkthrough') {
+                const section = document.getElementById('walkthrough');
+                if (!section.querySelector('.color-cell.active')) return false;
+                if (!section.querySelector('.level-btn.active')) return false;
+            }
+
+            return true;
+        }
+
+        function updateValidation(groupId) {
+            const required = getRequiredFields(groupId);
+            const shouldMark = attemptedGroups.has(groupId);
+            required.forEach(field => {
+                const rangeOk = isRangeValid(field);
+                const filled = isFilled(field);
+                const invalid = !filled || !rangeOk;
+                const hint = getFieldHintElement(field);
+                if (!shouldMark) {
+                    field.classList.remove('field-invalid');
+                    hint.classList.remove('visible');
+                } else {
+                    field.classList.toggle('field-invalid', invalid);
+                    if (invalid) {
+                        hint.textContent = !filled ? 'Заполните поле' : (getRangeHint(field) || 'Некорректное значение');
+                        hint.classList.add('visible');
+                    } else {
+                        hint.classList.remove('visible');
+                    }
+                }
+            });
+
+            document.querySelectorAll(`[data-validate=\"${groupId}\"]`).forEach(btn => {
+                const ok = isGroupValid(groupId);
+                btn.classList.toggle('is-disabled', !ok);
+                btn.setAttribute('aria-disabled', String(!ok));
+            });
+        }
+
+        function clearSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (!section) return;
+
+            section.querySelectorAll('input, select, textarea').forEach(field => {
+                if (field.tagName.toLowerCase() === 'select') {
+                    field.selectedIndex = 0;
+                } else {
+                    field.value = '';
+                }
+                field.classList.remove('field-invalid');
+            });
+
+            if (sectionId === 'walkthrough') {
+                section.querySelectorAll('.color-cell').forEach((cell, index) => {
+                    cell.classList.toggle('active', index === 0);
+                });
+                section.querySelectorAll('.level-btn').forEach((btn, index) => {
+                    btn.classList.toggle('active', index === 0);
+                });
+                attemptedGroups.delete('walkthrough');
+            }
+
+            if (sectionId === 'phenology') {
+                const phenologyForm = document.getElementById('phenology-form');
+                const phenologyStep3 = document.getElementById('phenology-step3');
+                const phenologyStep4 = document.getElementById('phenology-step4');
+                if (phenologyForm) phenologyForm.style.display = 'none';
+                if (phenologyStep3) phenologyStep3.style.display = 'none';
+                if (phenologyStep4) phenologyStep4.style.display = 'none';
+                ['phenology-step1', 'phenology-step2', 'phenology-step3', 'phenology-step4', 'phenology-all'].forEach(id => {
+                    attemptedGroups.delete(id);
+                });
+            }
+
+            if (sectionId === 'climate') {
+                attemptedGroups.delete('climate');
+            }
+
+            if (sectionId === 'treatment') {
+                attemptedGroups.delete('treatment');
+            }
+        }
+
+        function getSectionFields(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (!section) return [];
+            const fields = Array.from(section.querySelectorAll('input, select, textarea'));
+            return fields.filter(field => field.offsetParent !== null);
+        }
+
+        function setupEnterNavigation(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (!section) return;
+            section.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter') return;
+                const fields = getSectionFields(sectionId);
+                const currentIndex = fields.indexOf(event.target);
+                if (currentIndex === -1) return;
+                if (!isFilled(event.target)) return;
+                event.preventDefault();
+                const next = fields[currentIndex + 1];
+                if (next) next.focus();
+            });
+        }
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                showScreen(item.dataset.target);
+                closeSidebar();
+            });
+        });
+
+        document.querySelectorAll('.nav-tile').forEach(tile => {
+            tile.addEventListener('click', () => {
+                showScreen(tile.dataset.target);
+                closeSidebar();
+            });
+        });
+
+        menuToggle.addEventListener('click', (event) => {
+            event.stopPropagation();
+            document.body.classList.toggle('sidebar-open');
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!document.body.classList.contains('sidebar-open')) return;
+            const sidebar = document.querySelector('.sidebar');
+            const toggle = document.getElementById('menu-toggle');
+            if (!sidebar.contains(event.target) && !toggle.contains(event.target)) {
+                closeSidebar();
+            }
+        });
+
+        roleToggle.addEventListener('click', () => {
+            const isAdmin = document.body.classList.toggle('is-admin');
+            adminItems.forEach(item => item.classList.toggle('hidden', !isAdmin));
+            roleLabel.textContent = isAdmin ? 'Администратор' : 'Агроном';
+            roleToggle.textContent = isAdmin ? 'Переключить на Агронома' : 'Переключить на Админа';
+        });
+
+        document.querySelectorAll('.color-cell').forEach(cell => {
+            cell.addEventListener('click', () => {
+                cell.parentElement.querySelectorAll('.color-cell').forEach(c => c.classList.remove('active'));
+                cell.classList.add('active');
+                updateValidation('walkthrough');
+            });
+        });
+
+        document.querySelectorAll('.level-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.parentElement.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                updateValidation('walkthrough');
+            });
+        });
+
+        document.querySelectorAll('[data-toast]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const groupId = btn.getAttribute('data-validate');
+                if (groupId) {
+                    attemptedGroups.add(groupId);
+                    updateValidation(groupId);
+                    if (!isGroupValid(groupId)) return;
+                }
+                showToast(btn.dataset.toast);
+
+                const eventType = btn.getAttribute('data-event-type');
+                if (eventType === 'walkthrough') {
+                    const message = getWalkthroughEvent();
+                    if (message) addEvent(message, 'Обход');
+                }
+                if (eventType === 'phenology') {
+                    const message = getPhenologyEvent();
+                    if (message) addEvent(message, 'Фенология');
+                }
+                if (eventType === 'climate') {
+                    const message = getClimateEvent();
+                    if (message) addEvent(message, 'Климат');
+                }
+
+                const resetTarget = btn.getAttribute('data-reset');
+                if (resetTarget) {
+                    clearSection(resetTarget);
+                    attemptedGroups.delete(groupId);
+                    if (groupId) updateValidation(groupId);
+                }
+            });
+        });
+
+        const clearWalkthrough = document.getElementById('clear-walkthrough');
+        if (clearWalkthrough) {
+            clearWalkthrough.addEventListener('click', () => {
+                clearSection('walkthrough');
+                updateValidation('walkthrough');
+            });
+        }
+
+        loginBtn.addEventListener('click', () => {
+            loginOverlay.classList.add('hidden');
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            loginOverlay.classList.remove('hidden');
+        });
+
+        const now = new Date();
+        const datePill = document.getElementById('date-pill');
+        if (datePill) datePill.textContent = now.toLocaleDateString('ru-RU');
+
+        adminItems.forEach(item => item.classList.add('hidden'));
+        loadEvents();
+        renderEvents();
+
+        const validationGroups = [
+            'walkthrough',
+            'treatment',
+            'climate',
+            'phenology-step1',
+            'phenology-step2',
+            'phenology-step3',
+            'phenology-step4',
+            'phenology-all'
+        ];
+
+        updateRangeSettings();
+        document.querySelectorAll('[data-range-setting]').forEach(input => {
+            input.addEventListener('input', () => {
+                updateRangeSettings();
+                validationGroups.forEach(updateValidation);
+            });
+        });
+
+        function handleValidationEvent(event) {
+            const target = event.target;
+            if (!target || !target.getAttribute) return;
+            const groups = parseGroups(target.getAttribute('data-required'));
+            if (!groups.length) return;
+            groups.forEach(updateValidation);
+        }
+
+        document.addEventListener('input', handleValidationEvent);
+        document.addEventListener('change', handleValidationEvent);
+
+        validationGroups.forEach(updateValidation);
+
+        ['walkthrough', 'phenology', 'treatment', 'climate'].forEach(setupEnterNavigation);
+
+        const phenologyStart = document.getElementById('phenology-start');
+        const phenologyForm = document.getElementById('phenology-form');
+        const phenologyStep3 = document.getElementById('phenology-step3');
+        const phenologyStep4 = document.getElementById('phenology-step4');
+        const phenologyNext = document.getElementById('phenology-next');
+        const phenologyNext2 = document.getElementById('phenology-next-2');
+        const phenologyBack = document.getElementById('phenology-back');
+        const phenologyBack2 = document.getElementById('phenology-back-2');
+
+        if (phenologyStart) {
+            phenologyStart.addEventListener('click', () => {
+                attemptedGroups.add('phenology-step1');
+                updateValidation('phenology-step1');
+                if (!isGroupValid('phenology-step1')) return;
+                phenologyForm.style.display = 'block';
+                phenologyStep3.style.display = 'none';
+                phenologyStep4.style.display = 'none';
+            });
+        }
+
+        if (phenologyNext) {
+            phenologyNext.addEventListener('click', () => {
+                attemptedGroups.add('phenology-step2');
+                updateValidation('phenology-step2');
+                if (!isGroupValid('phenology-step2')) return;
+                phenologyForm.style.display = 'none';
+                phenologyStep3.style.display = 'block';
+                phenologyStep4.style.display = 'none';
+            });
+        }
+
+        if (phenologyNext2) {
+            phenologyNext2.addEventListener('click', () => {
+                attemptedGroups.add('phenology-step3');
+                updateValidation('phenology-step3');
+                if (!isGroupValid('phenology-step3')) return;
+                phenologyForm.style.display = 'none';
+                phenologyStep3.style.display = 'none';
+                phenologyStep4.style.display = 'block';
+            });
+        }
+
+        if (phenologyBack) {
+            phenologyBack.addEventListener('click', () => {
+                phenologyForm.style.display = 'block';
+                phenologyStep3.style.display = 'none';
+                phenologyStep4.style.display = 'none';
+            });
+        }
+
+        if (phenologyBack2) {
+            phenologyBack2.addEventListener('click', () => {
+                phenologyForm.style.display = 'none';
+                phenologyStep3.style.display = 'block';
+                phenologyStep4.style.display = 'none';
+            });
+        }
+
+        const treatmentType = document.getElementById('treatment-type');
+        const treatmentDrug = document.getElementById('treatment-drug');
+        const treatmentOptions = {
+            insecticide: [
+                'Актара (Тля)',
+                'Вертимек (Клещ)',
+                'Теппеки (Белокрылка)',
+                'Матч (Личинки)',
+                'Мовенто Энерджи'
+            ],
+            fungicide: [
+                'Свитч (Гниль)',
+                'Ридомил Голд',
+                'Превикур Энерджи',
+                'Топаз (Мучнистая роса)',
+                'Луна Транквилити'
+            ],
+            stimulant: [
+                'Мегафол (Антистресс)',
+                'Радифарм (Корень)',
+                'Изабион',
+                'Эпин-Экстра'
+            ]
+        };
+
+        function updateTreatmentDrugs() {
+            if (!treatmentDrug) return;
+            const value = treatmentType ? treatmentType.value : '';
+            treatmentDrug.innerHTML = '<option value="" selected disabled>Выберите препарат</option>';
+            if (value && treatmentOptions[value]) {
+                treatmentOptions[value].forEach(item => {
+                    const option = document.createElement('option');
+                    option.textContent = item;
+                    option.value = item;
+                    treatmentDrug.appendChild(option);
+                });
+            }
+        }
+
+        if (treatmentType) {
+            treatmentType.addEventListener('change', () => {
+                updateTreatmentDrugs();
+            });
+            updateTreatmentDrugs();
+        }
+
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                const isDark = document.body.classList.toggle('dark');
+                themeToggle.textContent = isDark ? 'Светлая тема' : 'Темная тема';
+            });
+        }
+
+        const adminUsersTable = document.querySelector('.admin-users');
+        const adminAddUserBtn = document.getElementById('admin-add-user');
+        const adminUserName = document.getElementById('admin-user-name');
+        const adminUserRole = document.getElementById('admin-user-role');
+        const adminUserPassword = document.getElementById('admin-user-password');
+
+        function setUserStatus(row, status) {
+            if (!row) return;
+            const statusLabel = row.querySelector('.user-status');
+            const toggleBtn = row.querySelector('[data-action="toggle-block"]');
+            const roleSelect = row.querySelector('.user-role');
+            const isBlocked = status === 'blocked';
+
+            row.dataset.status = isBlocked ? 'blocked' : 'active';
+            if (statusLabel) {
+                statusLabel.textContent = isBlocked ? 'Заблокирован' : 'Активен';
+                statusLabel.classList.toggle('block', isBlocked);
+            }
+            if (toggleBtn) {
+                toggleBtn.textContent = isBlocked ? 'Разблокировать' : 'Заблокировать';
+            }
+            if (roleSelect) {
+                roleSelect.disabled = isBlocked;
+            }
+        }
+
+        function createUserRow(name, role) {
+            const row = document.createElement('tr');
+            row.className = 'user-row';
+            row.dataset.user = name;
+            row.dataset.status = 'active';
+            row.innerHTML = `
+                <td class="user-name">${name}</td>
+                <td>
+                    <select class="user-role">
+                        <option${role === 'Агроном' ? ' selected' : ''}>Агроном</option>
+                        <option${role === 'Администратор' ? ' selected' : ''}>Администратор</option>
+                    </select>
+                </td>
+                <td><span class="tag user-status">Активен</span></td>
+                <td>
+                    <div class="admin-actions">
+                        <button class="btn btn-secondary" data-action="password">Сменить пароль</button>
+                        <button class="btn btn-ghost" data-action="toggle-block">Заблокировать</button>
+                    </div>
+                </td>
+            `;
+            return row;
+        }
+
+        if (adminUsersTable) {
+            adminUsersTable.querySelectorAll('.user-row').forEach(row => {
+                setUserStatus(row, row.dataset.status || 'active');
+            });
+
+            adminUsersTable.addEventListener('click', (event) => {
+                const button = event.target.closest('button[data-action]');
+                if (!button) return;
+                const row = button.closest('.user-row');
+                if (!row) return;
+
+                const userName = row.dataset.user || row.querySelector('.user-name')?.textContent.trim() || 'Пользователь';
+                const action = button.dataset.action;
+
+                if (action === 'password') {
+                    const newPassword = prompt(`Новый пароль для ${userName}:`);
+                    if (newPassword === null) return;
+                    if (newPassword.trim() === '') {
+                        showToast('Пароль не изменен');
+                        return;
+                    }
+                    showToast(`Пароль обновлен для ${userName}`);
+                }
+
+                if (action === 'toggle-block') {
+                    const isBlocked = row.dataset.status === 'blocked';
+                    setUserStatus(row, isBlocked ? 'active' : 'blocked');
+                    showToast(isBlocked ? 'Доступ восстановлен' : 'Доступ заблокирован');
+                }
+            });
+        }
+
+        if (adminAddUserBtn) {
+            adminAddUserBtn.addEventListener('click', () => {
+                const name = adminUserName ? adminUserName.value.trim() : '';
+                const role = adminUserRole ? adminUserRole.value : '';
+                const password = adminUserPassword ? adminUserPassword.value.trim() : '';
+
+                if (!name || !role) {
+                    showToast('Введите имя и роль');
+                    return;
+                }
+
+                const tbody = adminUsersTable ? adminUsersTable.querySelector('tbody') : null;
+                if (!tbody) return;
+
+                const row = createUserRow(name, role);
+                tbody.prepend(row);
+                setUserStatus(row, 'active');
+
+                showToast(password ? `Пользователь добавлен. Пароль: ${password}` : 'Пользователь добавлен');
+
+                if (adminUserName) adminUserName.value = '';
+                if (adminUserRole) adminUserRole.selectedIndex = 0;
+                if (adminUserPassword) adminUserPassword.value = '';
+            });
+        }
+
+        const treatmentSave = document.getElementById('treatment-save');
+        const treatmentHistory = document.getElementById('treatment-history');
+
+        function formatDateTime(date) {
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        }
+
+        if (treatmentSave && treatmentHistory) {
+            treatmentSave.addEventListener('click', () => {
+                if (!isGroupValid('treatment')) return;
+
+                const zone = document.querySelector('#treatment input[data-required="treatment"]');
+                const comment = document.querySelector('#treatment textarea[data-required="treatment"]');
+                const drug = treatmentDrug ? treatmentDrug.value : '';
+                const zoneValue = zone ? zone.value : '';
+                const commentValue = comment ? comment.value : '';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatDateTime(new Date())}</td>
+                    <td>${drug}</td>
+                    <td>${zoneValue}</td>
+                    <td>${commentValue}</td>
+                `;
+                row.classList.add('row-highlight');
+                treatmentHistory.prepend(row);
+
+                if (drug || zoneValue) {
+                    addEvent(`Обработка: ${drug} — ${zoneValue}`, 'Журнал');
+                }
+
+                clearSection('treatment');
+                updateTreatmentDrugs();
+                updateValidation('treatment');
+            });
+        }
+
+        const COLOR_STORAGE_KEY = 'floraguard-color-map';
+        const colorSyncInputs = document.querySelectorAll('[data-color-sync]');
+        const problemColorCells = document.querySelectorAll('.color-cell[data-color-key]');
+        const colorGroups = new Map();
+
+        function normalizeHex(value) {
+            if (!value) return '';
+            let hex = value.trim();
+            if (!hex.startsWith('#')) hex = `#${hex}`;
+            const shortHexMatch = /^#([0-9a-fA-F]{3})$/.exec(hex);
+            if (shortHexMatch) {
+                hex = `#${shortHexMatch[1].split('').map(ch => ch + ch).join('')}`;
+            }
+            if (/^#([0-9a-fA-F]{6})$/.test(hex)) return hex.toLowerCase();
+            return '';
+        }
+
+        function buildColorMap() {
+            const map = {};
+            colorGroups.forEach((group, key) => {
+                let hex = '';
+                const textInput = group.find(item => item.type === 'text');
+                if (textInput) hex = normalizeHex(textInput.value);
+                if (!hex) {
+                    const colorInput = group.find(item => item.type === 'color');
+                    if (colorInput) hex = normalizeHex(colorInput.value);
+                }
+                if (hex) map[key] = hex;
+            });
+            return map;
+        }
+
+        function saveColorMap(map) {
+            try {
+                localStorage.setItem(COLOR_STORAGE_KEY, JSON.stringify(map));
+            } catch (error) {
+                // ignore storage errors in demo mode
+            }
+        }
+
+        function loadColorMap() {
+            try {
+                const raw = localStorage.getItem(COLOR_STORAGE_KEY);
+                return raw ? JSON.parse(raw) : null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function applyProblemColors(map) {
+            problemColorCells.forEach(cell => {
+                if (!cell.dataset.defaultColor) {
+                    cell.dataset.defaultColor = cell.style.background || '';
+                }
+                const key = cell.dataset.colorKey;
+                const color = map && map[key] ? map[key] : cell.dataset.defaultColor;
+                if (color) cell.style.background = color;
+            });
+        }
+
+        function syncInputsFromMap(map) {
+            if (!map) return;
+            Object.entries(map).forEach(([key, hex]) => {
+                const group = colorGroups.get(key) || [];
+                group.forEach(input => {
+                    input.value = hex;
+                });
+            });
+        }
+
+        colorSyncInputs.forEach(input => {
+            const key = input.dataset.colorSync;
+            if (!colorGroups.has(key)) colorGroups.set(key, []);
+            colorGroups.get(key).push(input);
+        });
+
+        const storedColors = loadColorMap();
+        if (storedColors) {
+            syncInputsFromMap(storedColors);
+        }
+        applyProblemColors(storedColors || buildColorMap());
+
+        colorSyncInputs.forEach(input => {
+            input.addEventListener('input', () => {
+                const key = input.dataset.colorSync;
+                const group = colorGroups.get(key) || [];
+                const normalized = normalizeHex(input.value);
+                if (!normalized) return;
+                group.forEach(other => {
+                    if (other !== input) other.value = normalized;
+                });
+                const map = buildColorMap();
+                saveColorMap(map);
+                applyProblemColors(map);
+            });
+        });
+    </script>
+</body>
+</html>
